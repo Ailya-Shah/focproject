@@ -1,0 +1,1 @@
+g++ -std=c++11 murder_mystery_game.cpp -o murder_mystery_game -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
