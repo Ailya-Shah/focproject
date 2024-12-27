@@ -1,0 +1,401 @@
+#include <SFML/Graphics.hpp>
+#include <iostream>
+#include <string>
+#include <vector>
+
+// Structure Definitions
+struct Character {
+    std::string name;
+    std::string description;
+};
+
+struct Puzzle {
+    std::string jumbledWord;
+    std::string correctWord;
+    std::string riddle;
+};
+
+struct LevelStory {
+    std::string description;
+    std::vector<Character> suspects;
+};
+
+// Function to check if the guessed word is correct
+bool isGuessCorrect(const std::string& guess, const std::string& correctWord) {
+    return guess == correctWord;
+}
+
+// Function to generate a hint for the current puzzle
+std::string getHint(const std::string& correctWord, int revealedChars) {
+    if (revealedChars > correctWord.size()) {
+        revealedChars = correctWord.size(); // Clamp to the size of the word
+    }
+    return correctWord.substr(0, revealedChars) + std::string(correctWord.size() - revealedChars, '*');
+}
+
+// Function to calculate and display points
+void updatePoints(int& points, int tries, int hints, bool correct) {
+    if (correct) {
+        if (tries < 3) {
+            points += 5; // Base points
+            points += 5; // Bonus points
+        }
+    } else if (tries > 5) {
+        points -= 3; // Penalty for exceeding 5 tries
+    }
+
+    if (hints > 3) {
+        points -= 5; // Penalty for excessive hints
+    } else {
+        points += 2; // Bonus for using fewer than 3 hints
+    }
+}
+
+int main() {
+    // Initialize story and characters
+    std::vector<LevelStory> levels = {
+        {
+            "A gruesome murder has occurred at the grand mansion. Detective Holmes gathers the suspects in the lounge. Each puzzle unlocks a clue. Solve them to uncover the truth.",
+            {
+                {"Mr. Black", "A butler who knows everyone's secrets."},
+                {"Ms. Scarlet", "A glamorous socialite with a hidden past."},
+                {"Dr. Green", "A scientist with a questionable alibi."},
+                {"Mrs. White", "The reserved housekeeper who sees everything."}
+            }
+        }
+    };
+
+    // Initialize puzzles
+    std::vector<Puzzle> puzzles = {
+        {"iomtve", "motive", "I drive people to commit crimes. What am I?"},
+        {"adeviicnee", "evidence", "I confirm what really happened. What am I?"},
+        {"wettsnai", "witness", "I saw the crime unfold. Who am I?"},
+        {"lavibii", "alibi", "I can prove where someone was during the crime. What am I?"}
+    };
+
+    // Final riddle and murderer reveal
+    std::string finalRiddle = "I hold the weapon and the motive. Who am I?";
+    std::string murderer = "Mr. Black";
+
+    // Variables
+    int currentPuzzle = 0, points = 0, tries = 0, hints = 0, revealedChars = 0;
+    bool gameComplete = false, hintRequested = false, hintGivenForWord = false;
+    std::string playerInput = "";
+
+    // SFML setup
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Murder Mystery Game (Intermediate Mode)");
+    sf::Font font;
+    if (!font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")) {
+        std::cerr << "Error loading font!\n";
+        return -1;
+    }
+
+    // Text setup
+    sf::Text storyText, suspectText, jumbledWordText, inputText, statusText, hintText, riddleText;
+    storyText.setFont(font); suspectText.setFont(font);
+    jumbledWordText.setFont(font); inputText.setFont(font);
+    statusText.setFont(font); hintText.setFont(font); riddleText.setFont(font);
+    
+    storyText.setCharacterSize(20); storyText.setPosition(20, 20); storyText.setFillColor(sf::Color::White);
+    suspectText.setCharacterSize(18); suspectText.setPosition(20, 100); suspectText.setFillColor(sf::Color::Yellow);
+    jumbledWordText.setCharacterSize(30); jumbledWordText.setPosition(20, 200); jumbledWordText.setFillColor(sf::Color::White);
+    riddleText.setCharacterSize(25); riddleText.setPosition(20, 300); riddleText.setFillColor(sf::Color::Cyan);
+    inputText.setCharacterSize(25); inputText.setPosition(20, 400); inputText.setFillColor(sf::Color::Green);
+    statusText.setCharacterSize(25); statusText.setPosition(20, 450); statusText.setFillColor(sf::Color::Yellow);
+    hintText.setCharacterSize(20); hintText.setPosition(20, 500); hintText.setFillColor(sf::Color::Magenta);
+
+    // Display initial story
+    storyText.setString(levels[0].description);
+    std::string suspectList;
+    for (const auto& suspect : levels[0].suspects) {
+        suspectList += suspect.name + ": " + suspect.description + "\n";
+    }
+    suspectText.setString(suspectList);
+
+    // Game loop
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) window.close();
+
+            // Handle text input
+            if (event.type == sf::Event::TextEntered) {
+                if (event.text.unicode == '\b' && !playerInput.empty()) {
+                    playerInput.pop_back();
+                } else if (event.text.unicode < 128 && event.text.unicode != '\b') {
+                    playerInput += static_cast<char>(event.text.unicode);
+                }
+            }
+
+            // Handle hint request (Press 'H' to request a hint)
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::H) {
+                if (hintGivenForWord) {
+                    statusText.setString("Can't get more than one hint for a given word!");
+                } else if (hints >= 3) {
+                    statusText.setString("No more hints available!");
+                } else {
+                    hintRequested = true;
+                    hintGivenForWord = true;
+                    hints++;  // Increment the hint counter
+                    revealedChars++;  // Reveal more characters of the word for the hint
+                }
+            }
+        }
+
+        // Update current puzzle
+        if (currentPuzzle < puzzles.size() && !gameComplete) {
+            jumbledWordText.setString("Unscramble: " + puzzles[currentPuzzle].jumbledWord);
+            riddleText.setString("Riddle: " + puzzles[currentPuzzle].riddle);
+            inputText.setString("Your Guess: " + playerInput);
+
+            if (isGuessCorrect(playerInput, puzzles[currentPuzzle].correctWord)) {
+                updatePoints(points, tries, hints, true);
+                statusText.setString("Correct! Press Enter for the next clue.");
+                playerInput.clear(); currentPuzzle++; revealedChars = 0;
+                hintGivenForWord = false; hints = 0; tries = 0;
+
+                if (currentPuzzle >= puzzles.size()) {
+                    gameComplete = true;
+                    riddleText.setString("Final Riddle: " + finalRiddle);
+                }
+            } else if (!playerInput.empty()) {
+                statusText.setString("Keep trying!");
+                tries++;
+                updatePoints(points, tries, hints, false);
+            }
+
+            // Show hint if requested
+            if (hintRequested) {
+                hintText.setString("Hint: " + getHint(puzzles[currentPuzzle].correctWord, revealedChars));
+                hintRequested = false;  // Reset the hintRequested flag after showing the hint
+            } else {
+                hintText.setString("");  // Clear hint display if no hint is requested
+            }
+        }
+
+        // Handle game completion
+        if (gameComplete) {
+            inputText.setString("Your Guess: " + playerInput);
+            if (isGuessCorrect(playerInput, murderer)) {
+                statusText.setString("You've solved the mystery! The murderer is " + murderer + "!");
+            }
+        }
+
+        // Render everything
+        window.clear();
+        window.draw(storyText); window.draw(suspectText);
+        window.draw(jumbledWordText); window.draw(riddleText);
+        window.draw(inputText); window.draw(statusText);
+        window.draw(hintText); window.display();
+    }
+
+    return 0;
+}
+ (Intermediate Level)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Full hard mode code with integrated hint system and penalties as per user requirements
+#include <SFML/Graphics.hpp>
+#include <iostream>
+#include <string>
+#include <vector>
+
+// Structure Definitions
+struct Puzzle {
+    std::string jumbledWord;
+    std::string correctWord;
+    std::string riddle;
+};
+// Function to generate a hint for the current puzzle
+std::string getHint(const std::string& correctWord, int revealedChars) {
+    if (revealedChars > correctWord.size()) {
+        revealedChars = correctWord.size(); // Clamp to the size of the word
+    }
+    return correctWord.substr(0, revealedChars) + std::string(correctWord.size() - revealedChars, '*');
+}
+
+// Function to calculate and display points
+void updatePoints(int& points, int tries, int hints, bool correct) {
+    if (correct) {
+        if (tries < 3) {
+            points += 3; // Base points
+            points += 3; // Bonus points
+        }
+    } else if (tries > 5) {
+        points -= 5; // Penalty for exceeding 5 tries
+    }
+
+    if (hints > 3) {
+        points -= 10; // Penalty for excessive hints
+    } else {
+        points += 2; // Bonus for using fewer than 3 hints
+    }
+}
+
+int main() {
+    // Initialize puzzles
+    std::vector<Puzzle> puzzles = {
+        {"vlneaweos", "alonewaves", "I stand alone in the light, my family left behind. Yet shadows creep where the past is never kind. What am I?"},
+        {"tonwardtrfo", "forbidden", "I can grow strong in the face of defeat, but too much power is never sweet. What am I?"},
+        {"nswohgrt", "artwork", "My canvas is wide, my brush is true, yet the darkest strokes are hidden from view. What am I?"},
+        {"rcbbagurdoy", "bodyguard", "I was once his shield, now Iâ€™m left to rust. Betrayed, discarded, in ashes and dust. What am I?"},
+        {"sekeprviiw", "silentwitness", "I am always near, a presence unseen. I witness their secrets, though I stay serene. What am I?"}
+    };
+
+    // Initialize suspects
+    std::vector<Suspect> suspects = {
+        {"Sophie Ravenwood", "I may have a fortune, but my heart is cold. I sought to escape the shadows of my own family."},
+        {"James Crowley", "We built an empire together, but I wanted more than just profit. What was his secret?"},
+        {"Lydia Sinclair", "My art was everything. But perhaps I painted myself into a corner with my decisions."},
+        {"Victor Blackstone", "I had a duty to protect him, but once I lost my job, I lost everything. He thought he could just replace me."},
+        {"Amelia Prescott", "I watched them all from the sidelines. But what I knew, I kept buried... until now."}
+    };
+
+    // Variables
+    int currentPuzzle = 0, points = 0, tries = 0, hints = 0, revealedChars = 0;
+    bool hintRequested = false, hintGivenForWord = false;
+    std::string playerInput = "";
+    int currentSuspect = 0;
+
+    // SFML setup
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Whispers in the Night");
+    sf::Font font;
+    if (!font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")) {
+        std::cerr << "Error loading font!\n";
+        return -1;
+    }
+
+    // Text setup
+    sf::Text jumbledWordText, inputText, statusText, hintText, riddleText, clueText;
+    jumbledWordText.setFont(font); inputText.setFont(font);
+    statusText.setFont(font); hintText.setFont(font); riddleText.setFont(font); clueText.setFont(font);
+
+    jumbledWordText.setCharacterSize(30); jumbledWordText.setPosition(20, 150); jumbledWordText.setFillColor(sf::Color::White);
+    riddleText.setCharacterSize(25); riddleText.setPosition(20, 250); riddleText.setFillColor(sf::Color::Cyan);
+    inputText.setCharacterSize(25); inputText.setPosition(20, 350); inputText.setFillColor(sf::Color::Green);
+    statusText.setCharacterSize(25); statusText.setPosition(20, 450); statusText.setFillColor(sf::Color::Yellow);
+    hintText.setCharacterSize(20); hintText.setPosition(20, 500); hintText.setFillColor(sf::Color::Magenta);
+    clueText.setCharacterSize(20); clueText.setPosition(20, 550); clueText.setFillColor(sf::Color::White);
+
+    // Game loop
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) window.close();
+
+            // Handle text input
+            if (event.type == sf::Event::TextEntered) {
+                if (event.text.unicode == '\b' && !playerInput.empty()) {
+                    playerInput.pop_back();
+                } else if (event.text.unicode < 128 && event.text.unicode != '\b') {
+                    playerInput += static_cast<char>(event.text.unicode);
+                }
+            }
+
+            // Handle hint request
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::H) {
+                if (hintGivenForWord) {
+                    statusText.setString("Can't get more than one hint for a given word!");
+                } else if (hints >= 3) {
+                    statusText.setString("No more hints available!");
+                } else {
+                    hintRequested = true;
+                    hintGivenForWord = true;
+                    hints++;
+                    revealedChars++;
+                }
+            }
+        }
+
+        // Update current puzzle
+        if (currentPuzzle < puzzles.size()) {
+            jumbledWordText.setString("Unscramble: " + puzzles[currentPuzzle].jumbledWord);
+            riddleText.setString("Riddle: " + puzzles[currentPuzzle].riddle);
+            inputText.setString("Your Guess: " + playerInput);
+
+            if (isGuessCorrect(playerInput, puzzles[currentPuzzle].correctWord)) {
+                updatePoints(points, tries, hints, true);
+                statusText.setString("Correct! Press Enter for the next puzzle.");
+                playerInput.clear(); currentPuzzle++; revealedChars = 0;
+                hintGivenForWord = false; hints = 0; tries = 0;
+
+                // Reveal clue for the current suspect
+                if (currentPuzzle >= puzzles.size()) {
+                    clueText.setString("Clue: " + suspects[currentSuspect].clue);
+                    currentSuspect++; // Move to the next suspect
+                    if (currentSuspect >= suspects.size()) {
+                        statusText.setString("Game Over! Your score: " + std::to_string(points));
+                    }
+                }
+            } else if (!playerInput.empty()) {
+                statusText.setString("Keep trying!");
+                tries++;
+                updatePoints(points, tries, hints, false);
+            }
+
+            // Show hint if requested
+            if (hintRequested) {
+                hintText.setString("Hint: " + getHint(puzzles[currentPuzzle].correctWord, revealedChars));
+                hintRequested = false;
+            } else {
+                hintText.setString("");
+            }
+        }
+
+        // Clear window and draw everything
+        window.clear();
+        window.draw(jumbledWordText);
+        window.draw(riddleText);
+        window.draw(inputText);
+        window.draw(statusText);
+        window.draw(hintText);
+        window.draw(clueText);
+        window.display();
+    }
+
+    return 0;
+}
+ (Hard Level)
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+CODE FOR SCORING SCORES
+#ifndef SCOREMANAGER_H
+#define SCOREMANAGER_H
+
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+class ScoreManager {
+public:
+    // Function to save user scores
+    static void saveScore(const string& username, int score) {
+        ofstream outFile("scores.txt", ios::app); // Open file in append mode
+        if (outFile) {
+            outFile << username << " " << score << endl;
+            cout << "Score saved successfully!" << endl;
+        } else {
+            cerr << "Error opening file for writing." << endl;
+        }
+        outFile.close();
+    }
+
+    // Function to display all scores
+    static void displayScores() {
+        ifstream inFile("scores.txt");
+        if (inFile) {
+            string username;
+            int score;
+            cout << "User Scores:" << endl;
+            while (inFile >> username >> score) { // Read username and score from file
+                cout << username << ": " << score << endl;
+            }
+        } else {
+            cerr << "Error opening file for reading." << endl;
+        }
+        inFile.close();
+    }
+};
+
+#endif
+function for saving scores
+//////////////////////////////////////////////////////////////////////////////////////
