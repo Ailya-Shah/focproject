@@ -22,7 +22,7 @@ This is a C++ game built using SFML (Simple and Fast Multimedia Library). Player
 2. **C++ Compiler**: A compiler like GCC or MSVC that supports C++17 or later.
 3. **Files Required**:
    - `Arial.ttf` (Font file)
-   - `simon.png` (Background image)
+   - `ss.png` (Background image)
    - `mysterious.wav` (Background audio)
 
 ---
@@ -78,7 +78,7 @@ This is a C++ game built using SFML (Simple and Fast Multimedia Library). Player
 - **`murder_mystery.cpp`**: Main game code.
 - **`scores.txt`**: Stores player scores persistently.
 - **`Arial.ttf`**: Font file for in-game text rendering.
-- **`simon.png`**: Background image for the game window.
+- **`ss.png`**: Background image for the game window.
 - **`mysterious.wav`**: Background music for ambiance.
 
 ---
