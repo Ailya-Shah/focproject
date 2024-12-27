@@ -1,5 +1,5 @@
 Here’s a **README** for your SFML-based murder mystery game:
-
+**PLEASE VISIT GAME-DIRECTORY FOLDER TO VIEW THE FILES INVOLVED IN DIRECT INTERACTION WITH GAME THE GAME CODE IS PRESENT IN WW.CPP**
 ---
 
 # Murder Mystery Game
@@ -32,11 +32,11 @@ This is a C++ game built using SFML (Simple and Fast Multimedia Library). Player
 1. Install SFML and set up the required libraries in your IDE (e.g., Visual Studio or Code::Blocks).
 2. Compile the program:
    ```bash
-   g++ murder_mystery.cpp -o murder_mystery -lsfml-graphics -lsfml-audio -lsfml-window -lsfml-system
+   g++ ww.cpp -o ww -lsfml-graphics -lsfml-audio -lsfml-window -lsfml-system
    ```
 3. Run the game:
    ```bash
-   ./murder_mystery
+   ./ww
    ```
 
 ### Linux
