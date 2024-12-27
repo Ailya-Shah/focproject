@@ -137,6 +137,11 @@ This is a C++ game built using SFML (Simple and Fast Multimedia Library). Player
 
 ---
 
+## Additional notes about project:
+- Project files that are in direct interaction with game are present in GAME-DIRECTORY folder.
+- Game code is present in ww.cpp file.
+- Game functions developed at the time of development are present in file of game logic.
+
 ## CREDITS
 -Ailya Zainab 523506
 -Iman Naeem 525378
