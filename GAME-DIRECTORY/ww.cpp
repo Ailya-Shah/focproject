@@ -93,8 +93,7 @@ public:
             std::cerr << "Error opening file for writing. Scores will not be saved.\n";
         }
     }
-
-    static void displayScores() {
+ static void displayScores() {
         std::ifstream inFile("scores.txt");
         if (inFile) {
             std::string username;
@@ -120,14 +119,12 @@ public:
     }
 };
 
-void playLevel(const std::vector<Puzzle>& puzzles, const std::string& mode, int& points, const sf::Sprite& background) {
+void playLevel(const std::vector<Puzzle>& puzzles, const std::string& mode, int& points, sf::RenderWindow& window, const sf::Sprite& background) {
     int currentPuzzle = 0, tries = 0, hints = 0;
     size_t revealedChars = 0;
     std::string playerInput = "";
 
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Murder Mystery Game - " + mode);
     sf::Font font;
-
     if (!font.loadFromFile("Arial.ttf")) {
         std::cerr << "Error loading font! Make sure the file exists.\n";
         return;
@@ -152,7 +149,7 @@ void playLevel(const std::vector<Puzzle>& puzzles, const std::string& mode, int&
     statusText.setFillColor(sf::Color::Yellow);
 
     hintText.setCharacterSize(20);
-    hintText.setPosition(20, 500);
+    hintText.setPosition(50, 500);
     hintText.setFillColor(sf::Color::Magenta);
 
     while (window.isOpen()) {
@@ -180,7 +177,7 @@ void playLevel(const std::vector<Puzzle>& puzzles, const std::string& mode, int&
                     currentPuzzle++;
                     if (currentPuzzle >= puzzles.size()) {
                         statusText.setString("All puzzles completed!");
-                        window.close();
+                        return;
                     } else {
                         statusText.setString("Correct! Moving to the next puzzle.");
                     }
@@ -205,7 +202,7 @@ void playLevel(const std::vector<Puzzle>& puzzles, const std::string& mode, int&
 
         // Render everything
         window.clear();
-        window.draw(background); // Draw the background image first
+        window.draw(background);
         window.draw(jumbledWordText);
         window.draw(inputText);
         window.draw(statusText);
@@ -214,16 +211,15 @@ void playLevel(const std::vector<Puzzle>& puzzles, const std::string& mode, int&
     }
 }
 
+
 void displaySuspects(const std::vector<Suspect>& suspects) {
     std::cout << "Suspects List:\n";
     for (size_t i = 0; i < suspects.size(); ++i) {
         std::cout << i + 1 << ". " << suspects[i].name << ": " << suspects[i].clue << std::endl;
     }
 }
-bool guessMurdererSFML(std::vector<Suspect>& suspects, const Murderer& murderer, int& points, const sf::Sprite& background) {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Guess the Murderer");
+bool guessMurdererSFML(const std::vector<Suspect>& suspects, const Murderer& murderer, int& points, sf::RenderWindow& window, const sf::Sprite& background) {
     sf::Font font;
-
     if (!font.loadFromFile("Arial.ttf")) {
         std::cerr << "Error loading font! Make sure the file exists.\n";
         return false;
@@ -232,17 +228,17 @@ bool guessMurdererSFML(std::vector<Suspect>& suspects, const Murderer& murderer,
     sf::Text titleText, suspectText, feedbackText;
     titleText.setFont(font);
     titleText.setString("Who is the murderer?");
-    titleText.setCharacterSize(30);
+    titleText.setCharacterSize(50);
     titleText.setFillColor(sf::Color::Red);
     titleText.setPosition(20, 20);
 
     suspectText.setFont(font);
-    suspectText.setCharacterSize(20);
+    suspectText.setCharacterSize(30);
     suspectText.setFillColor(sf::Color::White);
     suspectText.setPosition(20, 80);
 
     feedbackText.setFont(font);
-    feedbackText.setCharacterSize(25);
+    feedbackText.setCharacterSize(50);
     feedbackText.setFillColor(sf::Color::Yellow);
     feedbackText.setPosition(20, 500);
 
@@ -293,149 +289,125 @@ bool guessMurdererSFML(std::vector<Suspect>& suspects, const Murderer& murderer,
     return guessedCorrectly;
 }
 
-void displayLevelSelection(sf::Sprite& background, std::string& modeChoice) {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Level Selection");
-    sf::Font font;
 
+void getUsername(sf::RenderWindow& window, sf::Sprite& background, std::string& username) {
+    sf::Font font;
     if (!font.loadFromFile("Arial.ttf")) {
         std::cerr << "Error loading font! Make sure the file exists.\n";
         return;
     }
 
-    sf::Text titleText, instructionText, level1Text, level2Text;
-    titleText.setFont(font);
-    titleText.setString("Select Level");
-    titleText.setCharacterSize(30);
-    titleText.setFillColor(sf::Color::Red);
-    titleText.setPosition(20, 20);
+    sf::Text usernamePrompt, inputText, instructionText;
+    std::string playerInput = "";
+
+    // Setup text objects
+    usernamePrompt.setFont(font);
+    usernamePrompt.setString("Enter your username: ");
+    usernamePrompt.setCharacterSize(50);
+    usernamePrompt.setFillColor(sf::Color::Red);
+    usernamePrompt.setPosition(80, 200);
+
+    inputText.setFont(font);
+    inputText.setCharacterSize(45);
+    inputText.setFillColor(sf::Color::Cyan);
+    inputText.setPosition(650, 200);
 
     instructionText.setFont(font);
-    instructionText.setString("Press 1 for Level 1 or 2 for Level 2");
+    instructionText.setString("Press Enter to confirm");
     instructionText.setCharacterSize(20);
     instructionText.setFillColor(sf::Color::White);
-    instructionText.setPosition(20, 100);
-
-    level1Text.setFont(font);
-    level1Text.setString("1. Level 1");
-    level1Text.setCharacterSize(25);
-    level1Text.setFillColor(sf::Color::White);
-    level1Text.setPosition(20, 150);
-
-    level2Text.setFont(font);
-    level2Text.setString("2. Level 2");
-    level2Text.setCharacterSize(25);
-    level2Text.setFillColor(sf::Color::White);
-    level2Text.setPosition(20, 200);
+    instructionText.setPosition(80, 300);
 
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 window.close();
+                return;
+            }
+
+            if (event.type == sf::Event::TextEntered) {
+                if (event.text.unicode == '\b') {
+                    if (!playerInput.empty()) playerInput.pop_back();
+                } else if (event.text.unicode < 128) {
+                    playerInput += static_cast<char>(event.text.unicode);
+                }
+                inputText.setString(playerInput);
+            }
+
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter && !playerInput.empty()) {
+                username = playerInput;
+                return; // Exit function after capturing username
+            }
+        }
+
+        window.clear();
+        window.draw(background);
+        window.draw(usernamePrompt);
+        window.draw(inputText);
+        window.draw(instructionText);
+        window.display();
+    }
+}
+
+void selectLevel(sf::RenderWindow& window, sf::Sprite& background, std::string& modeChoice) {
+    sf::Font font;
+    if (!font.loadFromFile("Arial.ttf")) {
+        std::cerr << "Error loading font! Make sure the file exists.\n";
+        return;
+    }
+
+    sf::Text levelPrompt, instructionText;
+
+    // Setup text objects
+    levelPrompt.setFont(font);
+    levelPrompt.setString("Select Level:\n1. Level 1\n2. Level 2");
+    levelPrompt.setCharacterSize(50);
+    levelPrompt.setFillColor(sf::Color::White);
+    levelPrompt.setPosition(20, 200);
+
+    instructionText.setFont(font);
+    instructionText.setString("Press 1 or 2 to select");
+    instructionText.setCharacterSize(20);
+    instructionText.setFillColor(sf::Color::Yellow);
+    instructionText.setPosition(20, 500);
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+                return;
             }
 
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Num1) {
                     modeChoice = "level1";
-                    window.close();
+                    return; // Exit function after selecting level
                 } else if (event.key.code == sf::Keyboard::Num2) {
                     modeChoice = "level2";
-                    window.close();
+                    return; // Exit function after selecting level
                 }
             }
         }
 
         window.clear();
         window.draw(background);
-        window.draw(titleText);
+        window.draw(levelPrompt);
         window.draw(instructionText);
-        window.draw(level1Text);
-        window.draw(level2Text);
         window.display();
-    }
-
-    if (modeChoice.empty()) {
-        std::cerr << "No level selected. Defaulting to level1.\n";
-        modeChoice = "level1";
-    }
-}
-
-
-void displayUsernameInput(sf::Sprite& background, std::string& username) {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Username Input");
-    sf::Font font;
-
-    if (!font.loadFromFile("Arial.ttf")) {
-        std::cerr << "Error loading font! Make sure the file exists.\n";
-        return;
-    }
-
-    sf::Text titleText, usernamePrompt, usernameInputText;
-    titleText.setFont(font);
-    titleText.setString("Enter your Username");
-    titleText.setCharacterSize(30);
-    titleText.setFillColor(sf::Color::Red);
-    titleText.setPosition(20, 20);
-
-    usernamePrompt.setFont(font);
-    usernamePrompt.setString("Enter your username: ");
-    usernamePrompt.setCharacterSize(20);
-    usernamePrompt.setFillColor(sf::Color::White);
-    usernamePrompt.setPosition(20, 100);
-
-    usernameInputText.setFont(font);
-    usernameInputText.setCharacterSize(20);
-    usernameInputText.setFillColor(sf::Color::Green);
-    usernameInputText.setPosition(250, 100);
-
-    std::string playerInput = "";
-
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            }
-
-            if (event.type == sf::Event::TextEntered) {
-                if (event.text.unicode == '\b') { // Handle backspace
-                    if (!playerInput.empty()) {
-                        playerInput.pop_back();
-                    }
-                } else if (event.text.unicode < 128) {
-                    playerInput += static_cast<char>(event.text.unicode);
-                }
-                usernameInputText.setString(playerInput);
-            }
-
-            if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::Enter) {
-                    username = playerInput;
-                    window.close();
-                }
-            }
-        }
-
-        window.clear();
-        window.draw(background);
-        window.draw(titleText);
-        window.draw(usernamePrompt);
-        window.draw(usernameInputText);
-        window.display();
-    }
-
-    if (username.empty()) {
-        std::cerr << "No username entered. Defaulting to 'Player'.\n";
-        username = "Player";
     }
 }
 
 int main() {
     int points = 0;
-    std::string modeChoice, username;
+    std::string username;
+    std::string modeChoice = "level1"; // Default level
+
+    sf::RenderWindow window(sf::VideoMode(1080, 800), "Murder Mystery Game");
 
     sf::Texture backgroundTexture;
-    if (!backgroundTexture.loadFromFile("simon.png")) {
+    if (!backgroundTexture.loadFromFile("ss.png")) {
         std::cerr << "Failed to load background image!\n";
         return -1;
     }
@@ -451,19 +423,17 @@ int main() {
     backgroundSound.setLoop(true); // Loop the audio
     backgroundSound.play();
 
-    // Call the level selection function
-    displayLevelSelection(background, modeChoice);
+    // Capture username
+    getUsername(window, background, username);
 
-    // Call the username input function
-    displayUsernameInput(background, username);
+    // Select level
+    selectLevel(window, background, modeChoice);
 
-    // Set default difficulty to "level1" if invalid input is provided
-    if (modeChoice != "level1" && modeChoice != "level2") {
-        std::cout << "Invalid mode selected. Defaulting to 'level1'.\n";
-        modeChoice = "level1";
-    }
+    // Proceed with the game logic...
+    std::cout << "Username: " << username << "\n";
+    std::cout << "Selected Mode: " << modeChoice << "\n";
 
-    // Puzzles for each level
+// Puzzles for each level
     std::vector<Puzzle> level1Puzzles = {
         {"iomtve", "motive", "I drive people to commit crimes. What am I?"},
         {"adeviicnee", "evidence", "I confirm what really happened. What am I?"},
@@ -491,20 +461,20 @@ int main() {
     std::vector<Puzzle> selectedPuzzles = (modeChoice == "level2") ? level2Puzzles : level1Puzzles;
 
     // Play the selected level
-    playLevel(selectedPuzzles, modeChoice, points, background);
+    playLevel(selectedPuzzles, modeChoice, points,window, background);
 
     // Display suspects and let the player guess the murderer
     displaySuspects(suspects);
-    if (guessMurdererSFML(suspects, murderer, points, background)) {
+    if (guessMurdererSFML(suspects, murderer, points,window, background)) {
         std::cout << "Congratulations! You solved the case!" << std::endl;
         ScoreManager::saveScore(username, points);
     } else {
         std::cout << "Better luck next time!" << std::endl;
     }
 
-    // Display scores
+    // Call the displayScores method of ScoreManager
     ScoreManager::displayScores();
-    
+
     return 0;
 }
 //g++ ww.cpp -o ww -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
