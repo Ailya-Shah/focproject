@@ -382,7 +382,7 @@ void showIntermediateMode(sf::RenderWindow& window) {
     std::string scrambledWord2 = "INGLY TOUAB";
     std::string correctWord2 = "LYING ABOUT";
     std::string scrambledWord3 = "REDRUM";
-    std::string correctWord3 = "MURDER";
+
 
     sf::Font font;
     if (!font.loadFromFile("Montserrat.ttf")) {

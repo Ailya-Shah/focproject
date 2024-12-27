@@ -203,9 +203,9 @@ void playLevel(const std::vector<Puzzle>& puzzles, const std::string& mode, int&
 }
 
 void displaySuspects(const std::vector<Suspect>& suspects) {
-    std::cout << "Suspects:\n";
-    for (const auto& suspect : suspects) {
-        std::cout << suspect.name << ": " << suspect.clue << std::endl;
+    std::cout << "Suspects List:\n";
+    for (size_t i = 0; i < suspects.size(); ++i) {
+        std::cout << i + 1 << ". " << suspects[i].name << ": " << suspects[i].clue << std::endl;
     }
 }
 
