@@ -125,7 +125,7 @@ This is a C++ game built using SFML (Simple and Fast Multimedia Library). Player
 
 ## Troubleshooting
 - **Font Error**: Ensure `Arial.ttf` is in the same directory as the executable.
-- **Image/Audio Loading Error**: Verify `simon.png` and `mysterious.wav` are correctly placed in the same directory as the executable.
+- **Image/Audio Loading Error**: Verify `ss.png` and `mysterious.wav` are correctly placed in the same directory as the executable.
 - **SFML Not Found**: Ensure SFML is installed and linked properly in your project setup.
 
 ---
